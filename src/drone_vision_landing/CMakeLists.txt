@@ -16,6 +16,8 @@ find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 add_executable(detect_aruco_tag src/detect_aruco_tag.cpp)
 target_include_directories(detect_aruco_tag PUBLIC
@@ -32,8 +34,11 @@ ament_target_dependencies(
   "image_transport"
   "std_msgs"
   "cv_bridge"
+  "eigen3_cmake_module"
+  Eigen3
   OpenCV
 )
+target_link_libraries(detect_aruco_tag Eigen3::Eigen)
 
 install(TARGETS detect_aruco_tag
   DESTINATION lib/${PROJECT_NAME})

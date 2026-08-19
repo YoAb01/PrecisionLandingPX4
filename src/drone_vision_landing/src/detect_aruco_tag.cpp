@@ -1,10 +1,12 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include <cstddef>
 #include <memory>
 #include <chrono>
 #include <functional>
 #include <cmath>
+#include <opencv2/core/types.hpp>
 #include <opencv2/highgui.hpp>
 #include <rclcpp/publisher.hpp>
 #include <rclcpp/subscription.hpp>
@@ -22,6 +24,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/dictionary.hpp>
+#include <Eigen/Geometry>
 
 using std::placeholders::_1;
 
@@ -123,15 +126,74 @@ private:
           _raw_img.size().width, 
           _raw_img.size().height
         );
-      cv::imshow("Camera OpenCv", _raw_img);
-      cv::waitKey(1);
+      // FIXME: Remove this debug
+      // cv::imshow("Camera OpenCv", _raw_img);
+      // cv::waitKey(1);
+
+      // Detect Markers with aruco lib
+      std::vector<int> ids;
+      std::vector<std::vector<cv::Point2f>> corners;
+      cv::aruco::detectMarkers(_raw_img, _dictionary, corners, ids);
+
+      // Find the _target_marker_id
+      for (size_t i=0; i<ids.size(); ++i) {
+          // Assuming the marker is center at (0,0,0)
+          float s = _marker_size_m / 2.0f;
+          std::vector<cv::Point3f> object_points = {
+            {-s,  s, 0},
+            { s,  s, 0},
+            { s, -s, 0},
+            {-s, -s, 0}
+          };
+
+        // If found
+        if (ids[i] == _target_marker_id) {
+          RCLCPP_INFO(this->get_logger(), "Target marker detected: %d", _target_marker_id);
+          // SolvePnP: rvec->[marker orientation relative to camera] | tvec->[marker position relative to camera]
+          cv::Vec3d rvec, tvec;
+          cv::solvePnP(object_points, corners[i], _camMatrix,
+              _distCoeffs, rvec, tvec
+            );
+
+          // Fill in the PoseStamped
+          // Convert rvec to quat
+          cv::Mat R;
+          cv::Rodrigues(rvec, R);
+
+          // OpenCv -> Eigen rotation matrix
+          Eigen::Matrix3d rotation;
+          for (int row=0; row<3; ++row) {
+            for (int col = 0; col < 3; ++col) {
+              rotation(row, col) = R.at<double>(row, col);
+            }
+          }
+
+          Eigen::Quaterniond q(rotation);
+          q.normalize();
+
+          geometry_msgs::msg::PoseStamped pose;
+
+          pose.header.stamp = msg->header.stamp;
+          pose.header.frame_id = msg->header.frame_id;
+
+          // Position
+          pose.pose.position.x = tvec[0];
+          pose.pose.position.y = tvec[1];
+          pose.pose.position.z = tvec[2];
+
+          // Orientation
+          pose.pose.orientation.x = q.x();
+          pose.pose.orientation.y = q.y();
+          pose.pose.orientation.z = q.z();
+          pose.pose.orientation.w = q.w();
+
+          // Publish
+          _tag_pose_pub->publish(pose);
+        }
+      }
     } catch (const cv_bridge::Exception &e) {
       RCLCPP_ERROR(this->get_logger(), "cv_bridge error: %s", e.what());
     }
-
-
-
-
   }
 
   // ─────────────────────────────────────────────────────────────────────────
