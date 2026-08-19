@@ -135,6 +135,14 @@ private:
       std::vector<std::vector<cv::Point2f>> corners;
       cv::aruco::detectMarkers(_raw_img, _dictionary, corners, ids);
 
+      cv::Mat debug_img = _raw_img.clone();
+      if (!ids.empty()) {
+        cv::aruco::drawDetectedMarkers(debug_img, corners, ids);
+        cv::drawFrameAxes(debug_img, _camMatrix, _distCoeffs, rvec, tvec, _marker_size_m * 0.5f);
+      }
+      cv::imshow("ArUco Debug", debug_img);
+      cv::waitKey(1);
+
       // Find the _target_marker_id
       for (size_t i=0; i<ids.size(); ++i) {
           // Assuming the marker is center at (0,0,0)
@@ -150,9 +158,8 @@ private:
         if (ids[i] == _target_marker_id) {
           RCLCPP_INFO(this->get_logger(), "Target marker detected: %d", _target_marker_id);
           // SolvePnP: rvec->[marker orientation relative to camera] | tvec->[marker position relative to camera]
-          cv::Vec3d rvec, tvec;
           cv::solvePnP(object_points, corners[i], _camMatrix,
-              _distCoeffs, rvec, tvec
+              _distCoeffs, rvec, tvec, false, cv::SOLVEPNP_IPPE_SQUARE
             );
 
           // Fill in the PoseStamped
@@ -221,6 +228,7 @@ private:
   int _target_marker_id{1};
   double _marker_size_m{1.5};
   std::string _dict_name;
+  cv::Vec3d rvec, tvec;
 
 };
 
