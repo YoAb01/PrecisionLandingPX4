@@ -1,0 +1,56 @@
+
+# Clock — required for ROS/Gazebo time sync (sim time)
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: BIDIRECTIONAL
+
+# Odometry (ground truth — for later comparison/debugging only, not for control)
+- ros_topic_name: "/${MODEL_NAME}/odom"
+  gz_topic_name: "/model/${MODEL_NAME}/odometry_with_covariance"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.OdometryWithCovariance"
+  direction: GZ_TO_ROS
+
+# IMU (main airframe IMU — informational; PX4 uses its own simulated IMU internally via SITL,
+# this ROS copy is for inspection/logging only)
+- ros_topic_name: "/${MODEL_NAME}/imu"
+  gz_topic_name: "/world/${WORLD_NAME}/model/${MODEL_NAME}/link/base_link/sensor/imu_sensor/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
+# Magnetometer
+- ros_topic_name: "/${MODEL_NAME}/magnetometer"
+  gz_topic_name: "/world/${WORLD_NAME}/model/${MODEL_NAME}/link/base_link/sensor/magnetometer_sensor/magnetometer"
+  ros_type_name: "sensor_msgs/msg/MagneticField"
+  gz_type_name: "gz.msgs.Magnetometer"
+  direction: GZ_TO_ROS
+
+# Barometer / Air Pressure Sensor
+- ros_topic_name: "/${MODEL_NAME}/barometer"
+  gz_topic_name: "/world/${WORLD_NAME}/model/${MODEL_NAME}/link/base_link/sensor/air_pressure_sensor/air_pressure"
+  ros_type_name: "sensor_msgs/msg/FluidPressure"
+  gz_type_name: "gz.msgs.FluidPressure"
+  direction: GZ_TO_ROS
+
+# GNSS / NavSat
+- ros_topic_name: "/${MODEL_NAME}/navsat"
+  gz_topic_name: "/world/${WORLD_NAME}/model/${MODEL_NAME}/link/base_link/sensor/navsat_sensor/navsat"
+  ros_type_name: "sensor_msgs/msg/NavSatFix"
+  gz_type_name: "gz.msgs.NavSat"
+  direction: GZ_TO_ROS
+
+# Camera (downward-facing RGB) — the important one for this project
+- ros_topic_name: "/${MODEL_NAME}/downfaced_camera/image_raw"
+  gz_topic_name: "/world/${WORLD_NAME}/model/${MODEL_NAME}/link/camera_link/sensor/imager/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/${MODEL_NAME}/downfaced_camera/camera_info"
+  gz_topic_name: "/world/${WORLD_NAME}/model/${MODEL_NAME}/link/camera_link/sensor/imager/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
