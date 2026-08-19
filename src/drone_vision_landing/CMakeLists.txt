@@ -17,6 +17,27 @@ find_package(OpenCV REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 
+add_executable(detect_aruco_tag src/detect_aruco_tag.cpp)
+target_include_directories(detect_aruco_tag PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(detect_aruco_tag PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  detect_aruco_tag
+  "rclcpp"
+  "geometry_msgs"
+  "sensor_msgs"
+  "tf2"
+  "tf2_ros"
+  "image_transport"
+  "std_msgs"
+  "cv_bridge"
+  OpenCV
+)
+
+install(TARGETS detect_aruco_tag
+  DESTINATION lib/${PROJECT_NAME})
+
 install(
   DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
