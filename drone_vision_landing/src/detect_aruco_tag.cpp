@@ -1,6 +1,3 @@
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "sensor_msgs/msg/camera_info.hpp"
-#include "std_msgs/msg/bool.hpp"
 #include <cstddef>
 #include <memory>
 #include <chrono>
@@ -143,6 +140,10 @@ private:
       cv::imshow("ArUco Debug", debug_img);
       cv::waitKey(1);
 
+      // Report tag detection: Init at false on every image_callback call
+      std_msgs::msg::Bool _tag_detected;
+      _tag_detected.data = false;
+
       // Find the _target_marker_id
       for (size_t i=0; i<ids.size(); ++i) {
           // Assuming the marker is center at (0,0,0)
@@ -196,8 +197,14 @@ private:
 
           // Publish
           _tag_pose_pub->publish(pose);
+
+          // Report detection
+          _tag_detected.data = true;
         }
       }
+      // Publish detection report
+      _is_detected_pub->publish(_tag_detected);
+
     } catch (const cv_bridge::Exception &e) {
       RCLCPP_ERROR(this->get_logger(), "cv_bridge error: %s", e.what());
     }
